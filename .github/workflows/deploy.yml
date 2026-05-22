@@ -25,6 +25,8 @@ jobs:
           node scripts/generate-article.mjs b4
           node scripts/generate-article.mjs b5
           node scripts/generate-article.mjs b8
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
 
       - name: 准备部署文件
         run: |
