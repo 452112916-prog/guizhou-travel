@@ -1,0 +1,43 @@
+name: 构建并部署到 Cloudflare R2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 安装依赖
+        run: npm install
+
+      - name: 生成所有文章
+        run: |
+          node scripts/generate-article.mjs b4
+          node scripts/generate-article.mjs b5
+          node scripts/generate-article.mjs b8
+
+      - name: 上传到 Cloudflare R2
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: r2 object put --recursive --yes dist/ --bucket=${{ secrets.R2_BUCKET }}
+
+      - name: 验证部署
+        run: |
+          echo "部署完成"
+          echo "R2 Bucket: ${{ secrets.R2_BUCKET }}"
+          echo "请访问 https://${{ secrets.R2_BUCKET }}.r2.cloudflarestorage.com 确认"

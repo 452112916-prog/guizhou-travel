@@ -1,0 +1,7 @@
+name = "guizhou-travel-worker"
+main = "worker/script.js"
+compatibility_date = "2024-01-01"
+
+[[r2_buckets]]
+binding = "ASSETS"
+bucket_name = "guizhou-travel"

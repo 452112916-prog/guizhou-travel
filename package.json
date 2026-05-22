@@ -1,0 +1,10 @@
+{
+  "name": "guizhou-travel",
+  "version": "1.0.0",
+  "description": "贵州旅游网 - 自动化文章发布",
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate-article.mjs"
+  },
+  "dependencies": {}
+}
