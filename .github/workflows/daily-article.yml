@@ -1,26 +1,14 @@
-name: 每日文章生成
+name: 每日文章发布
 
 on:
   schedule:
-    # 每天早上8点、下午2点、晚上8点各发布一篇
-    - cron: '0 0,6,12 * * *'
+    # 每天早上8点发布一篇
+    # 周一/四/日 → B4, 周二/五 → B5, 周三/六 → B8
+    - cron: '0 0 * * *'
   workflow_dispatch:
-    inputs:
-      article_type:
-        description: '文章类型'
-        required: true
-        default: 'b4'
-        type: choice
-        options:
-          - b4
-          - b5
-          - b8
-
-env:
-  DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
 
 jobs:
-  generate:
+  generate-and-publish:
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
@@ -34,11 +22,26 @@ jobs:
       - name: 安装依赖
         run: npm install
 
+      - name: 确定今日文章类型
+        id: date
+        run: |
+          DAY_OF_WEEK=$(date +%u)  # 1=周一, 7=周日
+          if [ $DAY_OF_WEEK -eq 1 ] || [ $DAY_OF_WEEK -eq 4 ] || [ $DAY_OF_WEEK -eq 7 ]; then
+            echo "type=b4" >> $GITHUB_OUTPUT
+          elif [ $DAY_OF_WEEK -eq 2 ] || [ $DAY_OF_WEEK -eq 5 ]; then
+            echo "type=b5" >> $GITHUB_OUTPUT
+          else
+            echo "type=b8" >> $GITHUB_OUTPUT
+          fi
+          echo "Publishing type: ${{ steps.date.outputs.type }}"
+
       - name: 生成文章
-        run: node scripts/generate-article.mjs ${{ github.event.inputs.article_type || 'b4' }}
+        run: node scripts/generate-article.mjs ${{ steps.date.outputs.type }}
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
 
       - name: 提交文章
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'auto: 生成新文章 ${{ github.event.inputs.article_type || env.ARTICLE_TYPE }}'
+          commit_message: "auto: 生成新文章 ${{ steps.date.outputs.type }} - $(date +%Y-%m-%d)"
           file_pattern: articles/
